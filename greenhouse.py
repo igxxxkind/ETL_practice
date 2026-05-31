@@ -29,7 +29,7 @@ class HealthStatus(str, Enum):
 
 class SoilType(str, Enum):
     NORMAL = "Normal"
-    KERAMZIT = "With_Keramzit"
+    KERAMZYT = "With_KERAMZYT"
     PERLITE = "With_Perlite"
 
 class MoistureLevel(str, Enum):
@@ -90,7 +90,9 @@ class Soil(BaseModel):
     def ph_value_must_be_between_0_14(cls, value):
         if value is None:
             return value
-        if value <0 or value>14:
+        elif not isinstance(value, (int, float)):
+            raise TypeError("pH level must be a number")
+        elif value <0 or value>14:
             raise ValueError("pH level must be between 0 and 14")
         return value
 
@@ -213,7 +215,7 @@ class Garden(BaseModel):
     
 if __name__ == "__main__":
     
-    garden_soil = Soil(soil_type=SoilType.KERAMZIT, drainage_type=DrainageType.KERAMZYT, moisture_level=MoistureLevel.MODERATE, ph_level=6.5)
+    garden_soil = Soil(soil_type=SoilType.KERAMZYT, drainage_type=DrainageType.KERAMZYT, moisture_level=MoistureLevel.MODERATE, ph_level=6.5)
     Betalux = Plant(common_name="Betalux", plant_family="Solanaceae", plant_type=PlantType.FRUIT, min_temperature=15, max_temperature=30, soil=garden_soil, planting_date=date(2026, 4, 23), growth_stage=GrowthStage.SEEDLING, last_watered=date(2026, 5, 30))
     Des_Andes = Plant(common_name="Des_Andes", plant_family="Solanaceae", plant_type=PlantType.FRUIT, min_temperature=15, max_temperature=30, soil=garden_soil, planting_date=date(2026, 4, 23), growth_stage=GrowthStage.SEEDLING, last_watered=date(2026, 5, 30))
     CaliforniaWonder= Plant(common_name="California Wonder", plant_family="Solanaceae", plant_type=PlantType.FRUIT, min_temperature=15, max_temperature=30, soil=garden_soil, planting_date=date(2026, 4, 23), growth_stage=GrowthStage.PLANTED, health_status=HealthStatus.UNKNOWN, last_watered=date(2026, 5, 30))
