@@ -60,14 +60,16 @@ class TimeOfDay(str, Enum):
     EVENING = "Evening"
 
 class NPKRatio(BaseModel):
-    n: float
-    p: float
-    k: float
+    n: Optional[float] = None
+    p: Optional[float] = None
+    k: Optional[float] = None
     
     @field_validator("n", "p", "k")
     @classmethod
     def validate_npk(cls, value):
-        if value < 0:
+        if value is None:
+            return value
+        elif value < 0:
             raise ValueError("NPK values must be non-negative")
         return value
 

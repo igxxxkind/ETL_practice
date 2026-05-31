@@ -47,10 +47,10 @@ def test_soil_ph_type():
         )
 
 # the idea is to ensure the default behavior of the relevant classes.      
-try:
-    greenhouse.Soil(drainage_type='None')
-except Exception as e:
-    print(type(e))
+# try:
+#     greenhouse.Soil(drainage_type='None')
+# except Exception as e:
+#     print(type(e))
   
 def test_invalid_soil_value():
     with pytest.raises(ValidationError):
