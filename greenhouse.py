@@ -78,7 +78,7 @@ class Fertilizer(BaseModel):
     type: Optional[str] = None
     NPK_ratio: Optional[NPKRatio] = None
     application_method: Optional[str] = None
-    application_frequency: Optional[str] = None
+    application_frequency: Optional[Schedule] = None
     
 class Soil(BaseModel):
     soil_type: SoilType = SoilType.NORMAL
@@ -135,9 +135,11 @@ class Plant(BaseModel):
     @computed_field
     @property
     def days_since_watered(self) -> Optional[int]:
-        if self.last_watered is None:
+        if self.last_watered is not None:
+            delta = date.today() - self.last_watered
+            return delta.days
+        else:
             return None
-        return (date.today() - self.last_watered).days
     
     @computed_field
     @property
