@@ -1,7 +1,6 @@
-# Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
 # .\greenhouse.venv\Scripts\Activate.ps1
 
-import pydantic
+from pydantic import BaseModel
 from fastapi import FastAPI
 from typing import Optional, List
 from sqlmodel import Field, SQLModel, create_engine, Session, select
@@ -11,41 +10,43 @@ import numpy as np
 
 
 # simple SQL table
-class Hero(SQLModel, table=True):
+class Fertilizer(SQLModel, table=True):
     id: int| None = Field(default=None, primary_key=True)
-    name: str
-    secret_name: str
-    age: int | None = None
-    
-if __name__ == "__main__":
+    name: str | None = None
+    type: str | None = None
+    NPK_ratio: str | None = None
+    application_method: str | None = None
+    application_frequency: str | None = None
 
-    hero_1 = Hero(name = 'DeadPull', secret_name='Wade Wilson')
-    hero_2 = Hero(name = 'Batman', secret_name = "Bruce Wayne")
-    hero_3 = Hero(name = 'Witcher', secret_name= 'Geralt of Rivia')
 
-    engine = create_engine("sqlite:///database.db")
+sqlite_filename = "database.db"
+sqlite_url = f'sqlite:///{sqlite_filename}'
+engine = create_engine(sqlite_url, echo=True)
 
+def create_db_and_tables():
     SQLModel.metadata.create_all(engine)
 
+def  create_fertilizers():
+    fert1 = Fertilizer(name="Azofoska", type = "Liquid", NPK_ratio = "10-5.5-8", application_method = "Fertigation", application_frequency = "Twice a month")
+    fert2 = Fertilizer(name="PermaBloom", type = "Liquid", NPK_ratio = "1-2-5", application_method = "Fertigation", application_frequency = "Twice a month")
+    fert3 = Fertilizer(name="GreenGro", type = "Granular", NPK_ratio = "5-10-5", application_method = "Top dressing", application_frequency = "Once a month")
+# 
+    # session = Session(engine)
+    
     with Session(engine) as session:
-        session.add(hero_1)
-        session.add(hero_2)
-        session.add(hero_3)
+        session.add(fert1)
+        session.add(fert2)
         session.commit()
+    
+    # session.add(fert1) # git add fert1
+    # session.add(fert2) # git add fert2
+    # session.commit() # git commit
+    # session.close() # git push
 
-    with Session(engine) as session:
-        statement = select(Hero).where(Hero.name == "Witcher")
-        hero = session.exec(statement).first()
-        print(hero)
+def main():
+    create_db_and_tables()
+    create_fertilizers()
 
-    ######################
-
-    user_id = input("Type the user ID:")
-
-    session.exec(
-        select(Hero).where(Hero.id==user_id)
-    ).all()
-
-    session.exec(
-        select(Hero).where(Hero.secret_name=='Bruce Wayne')
-    ).all()
+if __name__ == "__main__":
+    
+    main()

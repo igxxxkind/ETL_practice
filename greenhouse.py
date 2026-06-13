@@ -45,7 +45,6 @@ class HarvestQuality(str, Enum):
     
 class DrainageType(str, Enum):
     KERAMZYT = "Keramzyt"
-    PERLITE = "Perlite"
     OTHER = "Other"
     
 class Schedule(str, Enum):
@@ -63,6 +62,7 @@ class NPKRatio(BaseModel):
     n: Optional[float] = None
     p: Optional[float] = None
     k: Optional[float] = None
+    NPK_ratio: Optional[str] = None
     
     @field_validator("n", "p", "k")
     @classmethod
@@ -72,6 +72,19 @@ class NPKRatio(BaseModel):
         elif value < 0:
             raise ValueError("NPK values must be non-negative")
         return value
+    
+    @field_validator("NPK_ratio", mode="before")
+    @classmethod
+    def parse_npk_from_ratio(cls, value):
+        if value is None:
+            return value
+        if isinstance(value, str):
+            parts = value.split
+    
+    @model_validator(mode="after")
+    def _data(self):
+        self.NPK_ratio = f"{self.n}-{self.p}-{self.k}"
+        return self
 
 class Fertilizer(BaseModel):
     name: Optional[str] = None
