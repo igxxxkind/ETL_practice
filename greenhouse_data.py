@@ -9,7 +9,7 @@ import pandas as pd
 import numpy as np
 
 
-# simple SQL table
+# simple SQL data table Model for Fertilizer
 class Fertilizer(SQLModel, table=True):
     id: int| None = Field(default=None, primary_key=True)
     name: str | None = None
@@ -78,8 +78,10 @@ def  create_fertilizers():
 
 def select_fertilizers():
     with Session(engine) as session:
-         fertilizers = session.exec(select(Fertilizer)).all()
-         print(fertilizers)
+         statement = select(Fertilizer).where(Fertilizer.name!='PermaBloom').where(Fertilizer.type=='Liquid')
+         fertilizers = session.exec(statement) #SELECT * from fertilizers # and execute it
+         for object in fertilizers:
+             print(object)
 
 def main():
     create_db_and_tables()
