@@ -61,13 +61,53 @@ def select_fertilizers():
         fertilizers = session.exec(statement) #SELECT * from fertilizers # and execute it
         object = fertilizers.all()
         print(object)
+        
+def update_fertilizers():
+    with Session(engine) as session:
+        statement = select(Fertilizer).where(Fertilizer.name == 'PermaBloom')
+        fertilizer = session.exec(statement)
+        object = fertilizer.one()
+        print("Initial:", object)
+        object.application_frequency = 'Once a month'
+        session.add(object)
+        session.commit()
+        session.refresh(object)
+        print("Updated:", object)
+
+def delete_fertilizers():
+    with Session(engine) as session:
+        statement = select(Fertilizer).where(Fertilizer.name=='HydroponicNutrient')
+        fertilizer = session.exec(statement)
+        object = fertilizer.first()
+        
+        session.delete(object)
+        session.commit()
+        # check the record is deleted
+        statement = select(Fertilizer).where(Fertilizer.name=='HydroponicNutrient')
+        fertilizer = session.exec(statement)
+        object = fertilizer.first()
+        print(object)
+        
+        if object is None:
+            print("There's no Hydroponic Nutritient")
+            
+
+    
 
 def main():
     create_db_and_tables()
     # create_fertilizers()
     select_fertilizers()
+    update_fertilizers()
+    delete_fertilizers()
 
 if __name__ == "__main__":
+ # 1. SQLModel and BaseModel are essentially the same until the table initialized.
+ # 2. When SQLModel object is initiated with a table flag, it is not a safe BaseModel object anymore
+ # 3. A BaseModel class can be turned to SQLModel and create a corresponding table.
+ # 4. for any table the changes need to be added, commited and refreshed.
+ # 5. A table we get with SQLModel object should not contain any complex/custom-made classes as it is impossible to put them into the relational database. It should contain only basic datatypes and link to a differnt table. That is how we ensure a link between BaseModel classes.
+ # 6. So it is impossible to create a business logic using SQLModel table objects. We need to create a separate BaseModel class for business logic and use the SQLModel table objects only for database operations.
     
     main()
     

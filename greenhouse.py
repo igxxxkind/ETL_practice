@@ -3,6 +3,8 @@ from datetime import date, timedelta
 from typing import Optional, Dict, List, Union
 from enum import Enum
 
+from sqlmodel import SQLModel
+
 
 class PlantType(str, Enum):
     LEAVES = 'Leaf_Yielding'
@@ -51,6 +53,7 @@ class Schedule(str, Enum):
     DAILY = "Daily"
     TWICE = "Twice a Week"
     WEEKLY = "Weekly"
+    BIWEEKLY = "Twice a Month"
     MONTHLY = "Monthly"
     
 class TimeOfDay(str, Enum):
@@ -79,7 +82,7 @@ class NPKRatio(BaseModel):
         if value is None:
             return value
         if isinstance(value, str):
-            parts = value.split
+            parts = value.split("-")
     
     @model_validator(mode="after")
     def _data(self):
@@ -150,7 +153,7 @@ class Plant(BaseModel):
     def days_since_watered(self) -> Optional[int]:
         if self.last_watered is not None:
             delta = date.today() - self.last_watered
-            return delta.days
+            return delta.days #type:ignore 
         else:
             return None
     
@@ -160,15 +163,15 @@ class Plant(BaseModel):
         if self.planting_date is None:
             return None
         if self.re_planting_date is None:
-            return (date.today() - self.planting_date).days
-        return (date.today() - self.re_planting_date).days
+            return (date.today() - self.planting_date).days #type:ignore 
+        return (date.today() - self.re_planting_date).days #type:ignore 
     
     @computed_field
     @property
     def days_since_fertilized(self) -> Optional[int]:
         if self.last_fertilized is None:
             return None
-        return (date.today() - self.last_fertilized).days
+        return (date.today() - self.last_fertilized).days #type:ignore 
     
     
     
