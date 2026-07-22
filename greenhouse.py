@@ -83,6 +83,11 @@ class NPKRatio(BaseModel):
             return value
         if isinstance(value, str):
             parts = value.split("-")
+            return cls(
+                n = float(parts[0]) if len(parts) > 0 else None,
+                p = float(parts[1]) if len(parts) > 1 else None,
+                k = float(parts[2]) if len(parts) > 2 else None
+            )
     
     @model_validator(mode="after")
     def _data(self):
