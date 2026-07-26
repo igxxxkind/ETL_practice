@@ -86,8 +86,8 @@ class NPKRatio(BaseModel):
         return self
 
 class Fertilizer(BaseModel):
-    name: Optional[str] = None
-    type: Optional[str] = None
+    brand: Optional[str] = None
+    form_factor: Optional[str] = None
     NPK_ratio: Union[str, NPKRatio, None] = None
     application_method: Optional[str] = None
     application_frequency: Optional[Schedule] = None
@@ -279,8 +279,6 @@ class Garden(BaseModel):
     name: str
     list_of_plants: List[Plant] = []
     fertilizer: Optional[Fertilizer] = None   
-    watering_schedule: Optional[WateringSchedule] = None
-    harvests: Optional[List[Harvest]] = None
     
     @computed_field
     @property

@@ -3,26 +3,26 @@ from datetime import date, timedelta
 from typing import Optional, Dict, List, Union
 from enum import Enum
 
-from sqlmodel import SQLModel
+from sqlmodel import SQLModel, Relationship
 from sqlmodel import Field as SQLField 
 from ..greenhouse import Schedule, Fertilizer, NPKRatio, Soil, Plant, WateringSchedule, Harvest, Garden
 
 
 class FertilizerBase(SQLModel, table = True):
     id: int | None = SQLField(default=None, primary_key=True)
-    name: str
-    type: str
-    NPK_ratio: Optional[str] = None
+    brand: str
+    form_factor: str
+    NPK_ratio: Optional[int] = SQLField(default=None, foreign_key='npkratio.id')
     application_method: Optional[str] = None
     application_frequency: Optional[str] = None
 
     @classmethod
-    def from_basemodel(cls, obj: Fertilizer) -> "FertilizerBase":
+    def from_basemodel(cls, obj: Fertilizer, npk_ratio_id: int) -> "FertilizerBase":
         """ Transform BaseModel class into a flat SQLModel that is ready for table creation."""
         return cls(
-            name=obj.name,
-            type=obj.type,
-            NPK_ratio=obj.NPK_ratio.NPK_ratio if obj.NPK_ratio else None,
+            brand=obj.brand,
+            form_factor=obj.form_factor,
+            NPK_ratio=npk_ratio.id,
             application_method=obj.application_method,
             application_frequency=obj.application_frequency
         )
@@ -30,8 +30,8 @@ class FertilizerBase(SQLModel, table = True):
     def to_basemodel(self) -> Fertilizer:
         """ Transform a flat SQLModel class into a complex BaseModel class."""
         return Fertilizer(
-            name=self.name,
-            type=self.type,
+            brand=self.brand,
+            form_factor=self.form_factor,
             NPK_ratio = self.NPK_ratio,
             application_method=self.application_method,
             application_frequency=self.application_frequency
@@ -39,7 +39,7 @@ class FertilizerBase(SQLModel, table = True):
 
 
 class NPKRatioBase(SQLModel, table = True):
-    id: int | None = Field(default=None, primary_key=True)
+    id: int | None = SQLField(default=None, primary_key=True)
     n: Optional[float] = None
     p: Optional[float] = None
     k: Optional[float] = None
@@ -104,9 +104,11 @@ class PlantBase(SQLModel, table=True):
     re_planting_date: Optional[date] = None
     last_watered: Optional[date] = None
     last_fertilized: Optional[date] = None
+    garden_id: Optional[int] = SQLField(default=None, foreign_key="gardenbase.id")
+    garden: Optional["GardenBase"] = Relationship(back_populates = "list_of_plants")
     
     @classmethod
-    def from_basemodel(cls, obj: Plant, soil_id: int) -> "PlantBase":
+    def from_basemodel(cls, obj: Plant, soil_id: int, garden_id: int) -> "PlantBase":
         return cls(
             common_name = obj.common_name,
             plant_family = obj.plant_family,
@@ -120,7 +122,8 @@ class PlantBase(SQLModel, table=True):
             planting_date = obj.planting_date,
             re_planting_date = obj.re_planting_date,
             last_watered = obj.last_watered,
-            last_fertilized = obj.last_fertilized
+            last_fertilized = obj.last_fertilized,
+            garden_id = garden_id
         )
         
     def to_basemodel(self, soil: Soil) -> Plant:
@@ -195,17 +198,32 @@ class HarvestBase(SQLModel, table = True):
             quality = self.quality,
             notes = self.notes
         )
-class GardenBase(SQLModel):
-    name: Optional[str] = None
-    list_of_plants: Optional[str] = None
-    fertilizer: Optional[str] = None
-    watering_schedule: Optional[str] = None
-    harvests: Optional[str] = None
-        
+class GardenBase(SQLModel, table = True):
+    id: int | None = SQLField(default=None, primary_key=True)
+    name: str
+    list_of_plants: List["PlantBase"] = Relationship(back_populates="garden")
+    fertilizer: int| None = SQLField(default=None, foreign_key = "fertilizerbase.id")
+    
+    @classmethod
+    def from_basemodel(cls, obj: Garden, plant_id: int) -> "GardenBase":
+        return cls(
+            plant_id = plant_id,
+            name = obj.name,
+            fertilizer = obj.fertilizer
+        )
+
+    def to_basemodel(self, plant: Plant) -> Harvest:
+        return Harvest(
+            plant = plant,
+            harvest_date = self.harvest_date,
+            quantity = self.quantity,
+            quality = self.quality,
+            notes = self.notes
+        )
 if __name__ == "__main__":
     
     
-    object = Fertilizer(name="PermaBloom", type = "Liquid", NPK_ratio = NPKRatio(n=1.0, p=2.0, k=5.0), application_method = "Fertigation", application_frequency = "Twice a Month")
+    object = Fertilizer(brand="PermaBloom", form_factor = "Liquid", NPK_ratio = NPKRatio(n=1.0, p=2.0, k=5.0), application_method = "Fertigation", application_frequency = "Twice a Month")
     object_base = FertilizerBase.from_basemodel(object)
     print(object_base)
     # transform back to BaseModel
