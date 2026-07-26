@@ -293,20 +293,29 @@ class Garden(BaseModel):
 if __name__ == "__main__":
     
     garden_soil = Soil(soil_type=SoilType.KERAMZYT, drainage_type=DrainageType.KERAMZYT, moisture_level=MoistureLevel.MODERATE, ph_level=6.5)
+    
     Betalux = Plant(common_name="Betalux", plant_family="Solanaceae", plant_type=PlantType.FRUIT, min_temperature=15, max_temperature=30, soil=garden_soil, planting_date=date(2026, 4, 23), growth_stage=GrowthStage.SEEDLING, last_watered=date(2026, 5, 30))
+    
     Des_Andes = Plant(common_name="Des_Andes", plant_family="Solanaceae", plant_type=PlantType.FRUIT, min_temperature=15, max_temperature=30, soil=garden_soil, planting_date=date(2026, 4, 23), growth_stage=GrowthStage.SEEDLING, last_watered=date(2026, 5, 30))
+    
     CaliforniaWonder= Plant(common_name="California Wonder", plant_family="Solanaceae", plant_type=PlantType.FRUIT, min_temperature=15, max_temperature=30, soil=garden_soil, planting_date=date(2026, 4, 23), growth_stage=GrowthStage.PLANTED, health_status=HealthStatus.UNKNOWN, last_watered=date(2026, 5, 30))
+    
     CaliforniaWonder2= Plant(common_name="California Wonder", plant_family="Solanaceae", plant_type=PlantType.FRUIT, min_temperature=15, max_temperature=30, soil=garden_soil, planting_date=date(2026, 5, 30), growth_stage=GrowthStage.PLANTED, last_watered=date(2026, 5, 30))
+    
     Basil_Black = Plant(common_name="Basil Black", plant_family="Lamiaceae", plant_type=PlantType.LEAVES, min_temperature=10, max_temperature=30, soil=garden_soil, planting_date=date(2026, 4, 23), growth_stage=GrowthStage.SEEDLING, last_watered=date(2026, 5, 30))
+    
     Basil = Plant(common_name="Basil", plant_family="Lamiaceae", plant_type=PlantType.LEAVES, min_temperature=10, max_temperature=30, soil=garden_soil, planting_date=date(2026, 4, 23), growth_stage=GrowthStage.SEEDLING, last_watered=date(2026, 5, 30))
+    
     Coriander = Plant(common_name='Coriander', plant_family="Apiaceae", plant_type=PlantType.LEAVES, min_temperature=10, max_temperature=30, soil=garden_soil, planting_date=date(2026, 5, 10), growth_stage=GrowthStage.SEEDLING, last_watered=date(2026, 5, 30))
+    
     Mint = Plant(common_name='Mint', plant_family="Lamiaceae", plant_type=PlantType.LEAVES, min_temperature=10, max_temperature=30, soil=garden_soil, planting_date=date(2026, 4, 23), growth_stage=GrowthStage.SEEDLING, last_watered=date(2026, 5, 30))
     
-    watering_fruits = WateringSchedule(plant=[Betalux, Des_Andes, CaliforniaWonder, CaliforniaWonder2], frequency=Schedule.TWICE, amount=0.05, time_of_day=TimeOfDay.MORNING)
-    watering_leaves = WateringSchedule(plant=[Basil_Black, Basil, Coriander, Mint], frequency=Schedule.TWICE, amount=0.1, time_of_day=TimeOfDay.MORNING)
+    watering_fruits = [WateringSchedule(plant=plant, frequency=Schedule.TWICE, amount=0.05, time_of_day=TimeOfDay.MORNING) for plant in [Betalux, Des_Andes, CaliforniaWonder, CaliforniaWonder2]]
     
-    
+    watering_leaves = [WateringSchedule(plant=plant, frequency=Schedule.TWICE, amount=0.1, time_of_day=TimeOfDay.MORNING) for plant in [Basil_Black, Basil, Coriander, Mint]]
+
     garden_fruits = Garden(name = "My fruits", list_of_plants=[Betalux, Des_Andes, CaliforniaWonder, CaliforniaWonder2], watering_schedule=watering_fruits)
+    
     garden_leaves = Garden(name = "My greens", list_of_plants=[Basil_Black, Basil, Coriander, Mint], watering_schedule=watering_leaves)
     
     print(Betalux.days_since_planted)
