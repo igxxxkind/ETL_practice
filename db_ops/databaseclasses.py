@@ -4,11 +4,12 @@ from typing import Optional, Dict, List, Union
 from enum import Enum
 
 from sqlmodel import SQLModel
-
+from sqlmodel import Field as SQLField 
 from ..greenhouse import Schedule, Fertilizer, NPKRatio, Soil, Plant, WateringSchedule, Harvest, Garden
 
 
-class FertilizerBase(SQLModel):
+class FertilizerBase(SQLModel, table = True):
+    id: int | None = SQLField(default=None, primary_key=True)
     name: str
     type: str
     NPK_ratio: Optional[str] = None
@@ -21,7 +22,7 @@ class FertilizerBase(SQLModel):
         return cls(
             name=obj.name,
             type=obj.type,
-            NPK_ratio=obj.NPK_ratio,
+            NPK_ratio=obj.NPK_ratio.NPK_ratio if obj.NPK_ratio else None,
             application_method=obj.application_method,
             application_frequency=obj.application_frequency
         )
@@ -37,7 +38,8 @@ class FertilizerBase(SQLModel):
         )
 
 
-class NPKRatioBase(SQLModel):
+class NPKRatioBase(SQLModel, table = True):
+    id: int | None = Field(default=None, primary_key=True)
     n: Optional[float] = None
     p: Optional[float] = None
     k: Optional[float] = None
@@ -63,7 +65,8 @@ class NPKRatioBase(SQLModel):
         )
 
 
-class SoilBase(SQLModel):
+class SoilBase(SQLModel, table=True):
+    id: int | None = SQLField(default=None, primary_key=True)
     soil_type: Optional[str] = None
     drainage_type: Optional[str] = None
     moisture_level: Optional[str] = None
@@ -86,22 +89,24 @@ class SoilBase(SQLModel):
             ph_level = self.ph_level
         )
 
-class PlantBase(SQLModel):
-    common_name: Optional[str] = None
-    plant_family: Optional[str] = None
-    plant_type: Optional[str] = None
+class PlantBase(SQLModel, table=True):
+    id: int | None = SQLField(default=None, primary_key=True)
+    common_name: str
+    plant_family: str
+    plant_type: str
     min_temperature: Optional[float] = None
     max_temperature: Optional[float] = None
-    growth_stage: Optional[str] = None
-    sunlight: Optional[str] = None
-    health_status: Optional[str] = None
+    growth_stage: str
+    sunlight: str
+    health_status: str
+    soil_id: Optional[int] = SQLField(default = None, foreign_key = "soilbase.id")
     planting_date: Optional[date] = None
     re_planting_date: Optional[date] = None
     last_watered: Optional[date] = None
     last_fertilized: Optional[date] = None
     
     @classmethod
-    def from_basemodel(cls, obj: Plant) -> "PlantBase":
+    def from_basemodel(cls, obj: Plant, soil_id: int) -> "PlantBase":
         return cls(
             common_name = obj.common_name,
             plant_family = obj.plant_family,
@@ -111,13 +116,14 @@ class PlantBase(SQLModel):
             growth_stage = obj.growth_stage,
             sunlight = obj.sunlight,
             health_status = obj.health_status,
+            soil_id = soil_id,
             planting_date = obj.planting_date,
             re_planting_date = obj.re_planting_date,
             last_watered = obj.last_watered,
             last_fertilized = obj.last_fertilized
         )
         
-    def to_basemodel(self) -> Plant:
+    def to_basemodel(self, soil: Soil) -> Plant:
         return Plant(
             common_name = self.common_name,
             plant_family = self.plant_family,
@@ -127,6 +133,7 @@ class PlantBase(SQLModel):
             growth_stage = self.growth_stage,
             sunlight = self.sunlight,
             health_status = self.health_status,
+            soil = soil,
             planting_date = self.planting_date,
             re_planting_date = self.re_planting_date,
             last_watered = self.last_watered,
@@ -134,23 +141,27 @@ class PlantBase(SQLModel):
         )
 
 
-class WateringScheduleBase(SQLModel):
-    frequency: Optional[Schedule] = None
+class WateringScheduleBase(SQLModel, table=True):
+    id: int | None = SQLField(default=None, primary_key=True)
+    plant_id: int = SQLField(foreign_key='plantbase.id')
+    frequency: str
     amount: Optional[float] = None
-    time_of_day: Optional[str] = None
-    rain_detected: Optional[bool] = False
+    time_of_day: str
+    rain_detected: bool = False
     
     @classmethod
-    def from_basemodel(cls, obj: WateringSchedule) -> "WateringScheduleBase":
+    def from_basemodel(cls, obj: WateringSchedule, plant_id: int) -> "WateringScheduleBase":
         return cls(
+            plant_id = plant_id,
             frequency = obj.frequency,
             amount = obj.amount,
             time_of_day = obj.time_of_day,
             rain_detected = obj.rain_detected
             )
     
-    def to_basemodel(self) -> WateringSchedule:
+    def to_basemodel(self, plant: Plant) -> WateringSchedule:
         return WateringSchedule(
+            plant = plant,
             frequency = self.frequency,
             amount = self.amount,
             time_of_day = self.time_of_day,
@@ -158,23 +169,27 @@ class WateringScheduleBase(SQLModel):
         )
 
 
-class HarvestBase(SQLModel):
+class HarvestBase(SQLModel, table = True):
+    id: int | None = SQLField(default=None, primary_key = True)
+    plant_id: int = SQLField(foreign_key = "plantbase.id")
     harvest_date: Optional[date] = None
     quantity: Optional[float] = None
     quality: Optional[str] = None
     notes: Optional[str] = None
 
     @classmethod
-    def from_basemodel(cls, obj: Harvest) -> "HarvestBase":
+    def from_basemodel(cls, obj: Harvest, plant_id: int) -> "HarvestBase":
         return cls(
+            plant_id = plant_id,
             harvest_date = obj.harvest_date,
             quantity = obj.quantity,
             quality = obj.quality,
             notes = obj.notes
         )
 
-    def to_basemodel(self) -> Harvest:
+    def to_basemodel(self, plant: Plant) -> Harvest:
         return Harvest(
+            plant = plant,
             harvest_date = self.harvest_date,
             quantity = self.quantity,
             quality = self.quality,

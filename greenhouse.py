@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field, field_validator, model_validator, computed_field
+from pydantic import BaseModel, Field, field_validator, model_validator, computed_field, ValidationInfo
 from datetime import date, timedelta
 from typing import Optional, Dict, List, Union
 from enum import Enum
@@ -130,9 +130,9 @@ class Soil(BaseModel):
 class Plant(BaseModel):
     common_name: str
     plant_family: str
-    plant_type: PlantType
-    min_temperature: float
-    max_temperature: float
+    plant_type: PlantType = PlantType.FRUIT
+    min_temperature: Optional[float] = None
+    max_temperature: Optional[float] = None
     growth_stage: GrowthStage = GrowthStage.PLANTED
     sunlight: SunlightRequirement = SunlightRequirement.FULL_SUN
     health_status: HealthStatus = HealthStatus.HEALTHY
@@ -144,7 +144,7 @@ class Plant(BaseModel):
     
     @model_validator(mode="after")
     def validate_entries(self):
-        if self.min_temperature >= self.max_temperature:
+        if self.min_temperature is not None and self.max_temperature is not None and self.min_temperature > self.max_temperature:
             raise ValueError("Minimum temperature must be less than maximum temperature")
         if self.planting_date is None:
             return self
@@ -154,11 +154,27 @@ class Plant(BaseModel):
             raise ValueError("Re-planting date cannot be before planting date") 
         return self
 
+    @field_validator("growth_stage", 'plant_type','sunlight', 'health_status' , mode="before")
+    @classmethod
+    def validate_enums(cls, value, info: ValidationInfo):
+        enum_mapping = {
+            "growth_stage": GrowthStage,
+            "plant_type": PlantType,
+            "sunlight": SunlightRequirement,
+            "health_status": HealthStatus
+        }
+        if info.field_name not in enum_mapping:
+            raise ValueError(f"Unknown field name: {info.field_name}")
+        enum_class = enum_mapping[info.field_name]
+        if value is None or str(value).upper() not in enum_class.__members__.keys():
+            raise ValueError(f"Invalid {info.field_name}: {value}. Must be one of: {[e.value for e in enum_class]}")
+        return value
+    
     @field_validator("min_temperature", "max_temperature")
     @classmethod
     def positive_temperature(cls, value):
-        if value < -5:
-            raise ValueError("Temperature must be positive")
+        if value is not None and value < -5:
+            raise ValueError("Temperature must be above negative 5 degrees Celsius")
         return value
     
     @computed_field
@@ -189,7 +205,7 @@ class Plant(BaseModel):
     
     
 class WateringSchedule(BaseModel):
-    plant: Union[Plant, List[Plant]]
+    plant: Plant
     frequency: Schedule = Schedule.DAILY
     amount: Optional[float] = None
     time_of_day: TimeOfDay = TimeOfDay.MORNING
@@ -204,13 +220,24 @@ class WateringSchedule(BaseModel):
             raise ValueError("Watering amount must be non-negative")
         return value
     
+    @field_validator("frequency", 'time_of_day', mode="before")
+    @classmethod
+    def validate_enums(cls, value, info: ValidationInfo):
+        enum_mapping = {
+            "frequency": Schedule,
+            "time_of_day": TimeOfDay,
+        }
+        if info.field_name not in enum_mapping:
+            raise ValueError(f"Unknown field name: {info.field_name}")
+        enum_class = enum_mapping[info.field_name]
+        if value is None or str(value).upper() not in enum_class.__members__.keys():
+            raise ValueError(f"Invalid {info.field_name}: {value}. Must be one of: {[e.value for e in enum_class]}")
+        return value
+    
     @computed_field
     @property
     def next_watering_date(self) -> Optional[date]:
-        
-        watering = [item.last_watered for item in self.plant] if isinstance(self.plant, list) else [self.plant.last_watered]
-        watering = [w for w in watering if w is not None]
-        watering = min(watering) if watering else None
+        watering = self.plant.last_watered
         if watering is None:
             return date.today()
         if self.frequency == Schedule.DAILY:
@@ -219,6 +246,8 @@ class WateringSchedule(BaseModel):
             return watering + timedelta(days=3)
         if self.frequency == Schedule.WEEKLY:
             return watering + timedelta(days=7)
+        if self.frequency == Schedule.BIWEEKLY:
+            return watering + timedelta(days=14)
         if self.frequency == Schedule.MONTHLY:
             return watering + timedelta(days=30)
         
@@ -229,6 +258,21 @@ class Harvest(BaseModel):
     quantity: Optional[float] = None
     quality: Optional[HarvestQuality] = None
     notes: Optional[str] = None
+    
+    @field_validator("quality", mode="before")
+    @classmethod
+    def validate_enums(cls, value, info: ValidationInfo):
+        enum_mapping = {
+            "quality": HarvestQuality
+        }
+        if info.field_name not in enum_mapping:
+            raise ValueError(f"Unknown field name: {info.field_name}")
+        enum_class = enum_mapping[info.field_name]
+        if value is None:
+            return value
+        if str(value).upper() not in enum_class.__members__.keys():
+            raise ValueError(f"Invalid {info.field_name}: {value}. Must be one of: {[e.value for e in enum_class]}")
+        return value
     
 
 class Garden(BaseModel):
