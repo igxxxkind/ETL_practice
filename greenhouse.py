@@ -76,31 +76,39 @@ class NPKRatio(BaseModel):
             raise ValueError("NPK values must be non-negative")
         return value
     
-    @field_validator("NPK_ratio", mode="before")
-    @classmethod
-    def parse_npk_from_ratio(cls, value):
-        if value is None:
-            return value
-        if isinstance(value, str):
-            parts = value.split("-")
-            return cls(
-                n = float(parts[0]) if len(parts) > 0 else None,
-                p = float(parts[1]) if len(parts) > 1 else None,
-                k = float(parts[2]) if len(parts) > 2 else None
-            )
-    
     @model_validator(mode="after")
     def _data(self):
-        self.NPK_ratio = f"{self.n}-{self.p}-{self.k}"
+        NPK = ""
+        NPK = NPK + (f"{self.n}" if self.n is not None else "") + "-"
+        NPK = NPK + (f"{self.p}" if self.p is not None else "") + "-"
+        NPK = NPK + (f"{self.k}" if self.k is not None else "") + "-"
+        self.NPK_ratio = NPK[:-1]  # Remove the trailing "-"
         return self
 
 class Fertilizer(BaseModel):
     name: Optional[str] = None
     type: Optional[str] = None
-    NPK_ratio: Optional[NPKRatio] = None
+    NPK_ratio: Union[str, NPKRatio, None] = None
     application_method: Optional[str] = None
     application_frequency: Optional[Schedule] = None
     
+    @field_validator("NPK_ratio", mode="before")
+    @classmethod
+    def parse_npk_from_string(cls, value):
+        if value is None:
+            return value
+        if isinstance(value, str):
+            parts = value.split("-")
+            return NPKRatio(
+                n = float(parts[0]) if parts[0] else None,
+                p = float(parts[1]) if parts[1] else None,
+                k = float(parts[2]) if parts[2] else None
+            )
+        elif isinstance(value, NPKRatio):
+            return value
+        else:
+            raise ValueError("NPK-Ration must be a string or an NPK ratio object")
+
 class Soil(BaseModel):
     soil_type: SoilType = SoilType.NORMAL
     drainage_type: DrainageType = DrainageType.KERAMZYT
